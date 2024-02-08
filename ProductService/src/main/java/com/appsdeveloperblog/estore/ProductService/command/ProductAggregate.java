@@ -20,8 +20,7 @@ public class ProductAggregate {
     private String title;
     private BigDecimal price;
     private Integer quantity;
-
-
+    
     @CommandHandler
     public ProductAggregate(CreateProductCommand createProductCommand) {
         if (createProductCommand.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
@@ -41,6 +40,6 @@ public class ProductAggregate {
 
     @EventSourcingHandler
     public void on(ProductCreatedEvent productCreatedEvent) {
-        
+
     }
 }
