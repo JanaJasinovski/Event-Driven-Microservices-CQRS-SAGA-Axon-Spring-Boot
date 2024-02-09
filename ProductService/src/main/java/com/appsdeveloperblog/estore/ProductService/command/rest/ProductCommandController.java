@@ -1,6 +1,7 @@
 package com.appsdeveloperblog.estore.ProductService.command.rest;
 
 import com.appsdeveloperblog.estore.ProductService.command.CreateProductCommand;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.core.env.Environment;
@@ -17,13 +18,13 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/products")
-public class ProductController {
+public class ProductCommandController {
 
     private final Environment env;
     private final CommandGateway commandGateway;
 
     @PostMapping
-    public String createProduct(@RequestBody CreateProductRestModel createProductRestModel) {
+    public String createProduct(@Valid @RequestBody CreateProductRestModel createProductRestModel) {
 
         CreateProductCommand createProductCommand = CreateProductCommand.builder()
                 .price(createProductRestModel.getPrice())

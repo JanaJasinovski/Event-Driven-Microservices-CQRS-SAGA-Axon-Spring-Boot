@@ -1,5 +1,6 @@
 package com.appsdeveloperblog.estore.ProductService.command;
 
+import com.appsdeveloperblog.estore.Core.commands.ReserveProductCommand;
 import com.appsdeveloperblog.estore.ProductService.core.events.ProductCreatedEvent;
 import lombok.NoArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
@@ -20,7 +21,7 @@ public class ProductAggregate {
     private String title;
     private BigDecimal price;
     private Integer quantity;
-    
+
     @CommandHandler
     public ProductAggregate(CreateProductCommand createProductCommand) {
         if (createProductCommand.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
@@ -37,9 +38,17 @@ public class ProductAggregate {
         AggregateLifecycle.apply(productCreatedEvent);
     }
 
+    @CommandHandler
+    public void handle(ReserveProductCommand reserveProductCommand) {
+
+    }
+
 
     @EventSourcingHandler
     public void on(ProductCreatedEvent productCreatedEvent) {
-
+        this.productId = productCreatedEvent.getProductId();
+        this.price = productCreatedEvent.getPrice();
+        this.title = productCreatedEvent.getTitle();
+        this.quantity = productCreatedEvent.getQuantity();
     }
 }
