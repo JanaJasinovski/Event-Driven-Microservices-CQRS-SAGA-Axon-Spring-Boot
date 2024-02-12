@@ -217,7 +217,7 @@ public class OrderSaga {
     }
 
     @DeadlineHandler(deadlineName=PAYMENT_PROCESSING_TIMEOUT_DEADLINE)
-    public void handlePaymentDeadline(ProductReservedEvent productReservedEvent) {
+    public void   handlePaymentDeadline(ProductReservedEvent productReservedEvent) {
         LOGGER.info("Payment processing deadline took place. Sending a compensating command to cancel the product reservation");
         cancelProductReservation(productReservedEvent, "Payment timeout");
     }

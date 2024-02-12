@@ -1,7 +1,10 @@
 package com.appsdeveloperblog.estore.ProductService.command;
 
+import com.appsdeveloperblog.estore.Core.commands.CancelProductReservationCommand;
 import com.appsdeveloperblog.estore.Core.commands.ReserveProductCommand;
 import com.appsdeveloperblog.estore.ProductService.core.events.ProductCreatedEvent;
+import com.appsdeveloperblog.estore.ProductService.core.events.ProductReservationCancelledEvent;
+import com.appsdeveloperblog.estore.ProductService.core.events.ProductReservedEvent;
 import lombok.NoArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -12,7 +15,7 @@ import org.springframework.beans.BeanUtils;
 
 import java.math.BigDecimal;
 
-@Aggregate
+@Aggregate(snapshotTriggerDefinition = "productSnapshotTriggerDefinition")
 @NoArgsConstructor
 public class ProductAggregate {
 
@@ -24,10 +27,14 @@ public class ProductAggregate {
 
     @CommandHandler
     public ProductAggregate(CreateProductCommand createProductCommand) {
-        if (createProductCommand.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+        // Validate Create Product Command
+
+        if(createProductCommand.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Price cannot be less or equal than zero");
         }
-        if (createProductCommand.getTitle() == null || createProductCommand.getTitle().isBlank()) {
+
+        if(createProductCommand.getTitle() == null
+                || createProductCommand.getTitle().isBlank()) {
             throw new IllegalArgumentException("Title cannot be empty");
         }
 
@@ -41,6 +48,41 @@ public class ProductAggregate {
     @CommandHandler
     public void handle(ReserveProductCommand reserveProductCommand) {
 
+        if(quantity < reserveProductCommand.getQuantity()) {
+            throw new IllegalArgumentException("Insufficient number of items in stock");
+        }
+
+        ProductReservedEvent productReservedEvent = ProductReservedEvent.builder()
+                .orderId(reserveProductCommand.getOrderId())
+                .productId(reserveProductCommand.getProductId())
+                .quantity(reserveProductCommand.getQuantity())
+                .userId(reserveProductCommand.getUserId())
+                .build();
+
+        AggregateLifecycle.apply(productReservedEvent);
+
+    }
+
+    @CommandHandler
+    public void handle(CancelProductReservationCommand cancelProductReservationCommand) {
+
+        ProductReservationCancelledEvent productReservationCancelledEvent =
+                ProductReservationCancelledEvent.builder()
+                        .orderId(cancelProductReservationCommand.getOrderId())
+                        .productId(cancelProductReservationCommand.getProductId())
+                        .quantity(cancelProductReservationCommand.getQuantity())
+                        .reason(cancelProductReservationCommand.getReason())
+                        .userId(cancelProductReservationCommand.getUserId())
+                        .build();
+
+        AggregateLifecycle.apply(productReservationCancelledEvent);
+
+    }
+
+
+    @EventSourcingHandler
+    public void on(ProductReservationCancelledEvent productReservationCancelledEvent) {
+        this.quantity += productReservationCancelledEvent.getQuantity();
     }
 
 
@@ -51,4 +93,11 @@ public class ProductAggregate {
         this.title = productCreatedEvent.getTitle();
         this.quantity = productCreatedEvent.getQuantity();
     }
+
+
+    @EventSourcingHandler
+    public void on(ProductReservedEvent productReservedEvent) {
+        this.quantity -= productReservedEvent.getQuantity();
+    }
+
 }
